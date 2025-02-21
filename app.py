@@ -191,6 +191,10 @@ if st.session_state.umap_fig:
     else:
         st.plotly_chart(st.session_state.umap_fig)
 
+st.markdown(f"""
+Peores:{"&emsp;"*2}Tipo de datos:Escalados{"&emsp;"*2}Número de vecinos:5{"&emsp;"*2}Distancia mínima:0.001{"&emsp;"*2}Dispersión:0.1{"&emsp;"*2}Distancia:euclidean{"&emsp;"*2}Separación:1.0{"&emsp;"*2}Dimensiones:2
+
+""",True)
 
 col1, col2 = st.columns([0.9, 0.1])
 
@@ -340,9 +344,139 @@ st.markdown("""
 
 """)
 
+st.markdown("""#### 7. Juanpis tiene curiosidad sobre cómo funcionan PCA, t-SNE y UMAP. ¿Cómo le explicarías de forma corta y concisa las diferencias clave \
+            entre estas técnicas?""")  
+
+_, col1, col2 = st.columns([0.1,0.6,0.3])
+
+with col1:
+    st.image("vYsQF.png",width= 700)
+
+with col2:
+    st.markdown("""
+    - **PCA**: Aqui esta su hijo juampis, y tiene un outifit muy particular, el le pide que le tome una foto, pero es una foto \
+                donde no pierda ningun detalle de su outfit, entonces usted empieza a buscar en que angulo tomar la foto, y los \
+                resultados son los de la parte derecha, como puede ver, en el angulo 1 y 3 no logro camputarar todo el outif y \
+                perdio informacion o detalle del outif, mientras que en el angulo 2, logro caputrar todo el outfit por lo que no \
+                perdio informacion y le dio contentillo a su hijo
+    """)
+
+st.markdown("""
+- **TSNE**: Imaginese que quiere organizar una fiesta, pero en las personas invitadas existen grupos de amigos que no se pueden ver \
+            ver con otros grupos por que son muy distintos, pues lastimosamente el organizador TSNE no tuvo esto en cuenta, fue un \
+            excelente organizador y logro dejar a los grupos de amigos cerca unos de otros, pero olvido el pequeño detalle y no \
+            necesariamente dejo a los grupos distintos lejos, puede ser que el azar dejara a los grupos distintos lejos, pero el \
+            organizador al olvidar este detalle, no siempre el azar jugara a su favor y puede pasar que estos grupos muy distintos \
+            queden cercanos
+
+- **UMAP**: Ahora viendo el error pasado y que esto de tener a grupos muy distintos cerca fue problematico, decide cambiar de organizador \
+            y contrata a UMAP, este a diferencia de TSNE, si tiene muy presente a quienes no tiene que sentar cerca y a la vez sabe quienes \
+            son del mismo grupo, por lo que logra agrupar a los amigos en sus grupos usales, y alejarlos con los que tienen muchas diferencias
+
+""")
+
+_, col1, _ = st.columns([0.2,0.6,0.1])
+
+with col1:
+    st.image("evolution-embeddings.jpg",width= 700)
+
+
+st.markdown("""#### 10. Como parte del proceso de validación de autoría, la empresa verifica que cada desarrollador comprenda a fondo el código, pudiendo \
+            adaptarlo y modificarlo según los requerimientos del negocio. Para garantizar esto, el equipo de revisión técnica, liderado por Albert, realizará \
+            una serie de preguntas y pruebas destinadas a evaluar tu dominio sobre el código, su propósito y su implementación. Deberás estar preparado para \
+            justificar cada decisión tomada en el desarrollo""")
+
+
+code = """
+from sklearn.manifold import TSNE
+
+tsne = TSNE(
+    n_components=2,                 # Dimensiones de la reducción (2D o 3D)
+    perplexity=30.0,                # Balance entre agrupamiento local y global
+    early_exaggeration=12.0,        # Expande distancias en la fase inicial
+    learning_rate='auto',           # Controla la velocidad de ajuste
+    max_iter=None,                  # Iteraciones (None usa el valor predeterminado)
+    n_iter_without_progress=300,    # Iteraciones sin mejora antes de detenerse
+    min_grad_norm=1e-07,            # Criterio de convergencia basado en gradientes
+    metric='euclidean',             # Distancia utilizada (Euclidiana por defecto)
+    metric_params=None,             # Parámetros adicionales para la métrica
+    init='pca',                     # Inicialización ('random' o 'pca')
+    verbose=0,                      # Nivel de mensajes en la ejecución
+    random_state=None               # Control de aleatoriedad para reproducibilidad
+)
+
+from umap import UMAP
+
+umap_model = UMAP(
+    n_neighbors=15,                 # Número de vecinos considerados en la reducción
+    n_components=2,                 # Dimensiones de la reducción (2D o 3D)
+    metric='euclidean',             # Distancia utilizada para medir similitud
+    init='spectral',                # Método de inicialización ('random' o 'spectral')
+    min_dist=0.1,                   # Distancia mínima entre puntos en el espacio reducido
+    spread=1.0,                     # Controla la dispersión de los datos embebidos
+    repulsion_strength=1.0,         # Fuerza de separación entre puntos cercanos
+    random_state=None,              # Control de aleatoriedad para reproducibilidad
+    target_metric='categorical',    # Distancia usada para datos supervisados
+    verbose=False                   # Mensajes de estado en la ejecución
+)
+"""
+
+st.code(code, language="python")
+
 
 
 st.markdown("#### 11. ¿Cuál de estas técnicas es más adecuada para grandes volúmenes de datos y por qué?")
+
+st.markdown("""Se realizara una prueba con distintos tamaños de muestra y varias pruebas con el mismo tamaño para evitar estar sesgados a una sola prueba
+            y a la vez comparar los tiempos que necesita cada algoritmo para reducir la dimensionalidad en contraste con su calidad
+            """)
+
+st.code("""
+sample_sizes = [1000, 3000, 5000, 7000, 10000, 12000, 15000]
+n_iter = 5  # Número de iteraciones por cada tamaño
+
+# Diccionario para almacenar tiempos
+time_results = {"PCA": [], "t-SNE": [], "UMAP": []}
+
+for n in sample_sizes:
+    pca_times, tsne_times, umap_times = [], [], []
+    
+    for _ in range(n_iter):
+        X_subset, _ = shuffle(X, y, random_state=None, n_samples=n)
+        
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X_subset)
+
+        # PCA
+        start = time.time()
+        PCA(n_components=2).fit_transform(X_scaled)
+        pca_times.append(time.time() - start)
+        
+        # t-SNE
+        start = time.time()
+        TSNE(n_components=2, perplexity=10).fit_transform(X_subset)
+        tsne_times.append(time.time() - start)
+        
+        # UMAP
+        start = time.time()
+        umap.UMAP(n_components=2, min_dist=0.005,n_neighbors=10).fit_transform(X_subset)
+        umap_times.append(time.time() - start)
+    
+    time_results["PCA"].append((np.mean(pca_times), np.std(pca_times)))
+    time_results["t-SNE"].append((np.mean(tsne_times), np.std(tsne_times)))
+    time_results["UMAP"].append((np.mean(umap_times), np.std(umap_times)))
+
+df_results = pd.DataFrame({
+    "Sample Size": sample_sizes,
+    "PCA Mean": [x[0] for x in time_results["PCA"]],
+    "PCA Std": [x[1] for x in time_results["PCA"]],
+    "t-SNE Mean": [x[0] for x in time_results["t-SNE"]],
+    "t-SNE Std": [x[1] for x in time_results["t-SNE"]],
+    "UMAP Mean": [x[0] for x in time_results["UMAP"]],
+    "UMAP Std": [x[1] for x in time_results["UMAP"]]
+})
+
+        """)
 
 if "pca_tiempo" not in st.session_state:
     st.session_state.pca_tiempo = None
